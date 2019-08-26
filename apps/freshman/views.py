@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 
 import random
 import time
+import json
 
 from .forms import Applyfrom, ModifyForm
 from .models import Freshman, Academy, Major
@@ -73,7 +74,11 @@ class RegisterView(View):
             # else:
             #     return render(request, 'register.html', {'error': error})
         else:
-            return HttpResponse(apply_form.errors)
+            errors = []
+            for error in apply_form.errors:
+                errors.append(error)
+            error_list = ','.join(errors)
+            return HttpResponse(error_list)
             # return render(request, '../freshman_templates/register.html')  # 提示错误信息
 
 # 随机生成数字验证码
@@ -122,23 +127,29 @@ class LoginView(View):
         # user = authenticate(username=student_id, password=password)
         try:
             user = Freshman.objects.get(newstudent_id=newstudent_id)
-            if user is not None:
-                if user.password == password:
-                    # url = '/index/' + newstudent_id + '/'
-                    url = '/homepage/'
-                    response = redirect(url)
-                    response.set_cookie('newstudent_id', newstudent_id)
-                    response.set_cookie('idnum', user.id)
-                    return response  # 跳转到选择界面，选择查看预约、申请书、方向选择、面试通知或面试结果
-                else:
-                    return render(request, '../freshman_templates/login.html', {'error': '用户名或密码不正确！'})
+            if password == '':
+                json_error = json.dumps({'error': '表乱来，密码还没填呢'})
+                return render(request, '../freshman_templates/login.html',{'error': json_error, 'student_id': user.newstudent_id})
+            else:
+                if user is not None:
+                    if user.password == password:
+                        # url = '/index/' + newstudent_id + '/'
+                        url = '/homepage/'
+                        response = redirect(url)
+                        response.set_cookie('newstudent_id', newstudent_id)
+                        response.set_cookie('idnum', user.id)
+                        return response  # 跳转到选择界面，选择查看预约、申请书、方向选择、面试通知或面试结果
+                    else:
+                        json_error = json.dumps({'error': '啊，用户名和密码不匹配呀！'})
+                        return render(request, '../freshman_templates/login.html', {'error': json_error, 'student_id': user.newstudent_id})
         except Freshman.DoesNotExist:
-            return render(request, '../freshman_templates/register.html', {'error': '你还没有注册报名哦'})
+            json_data = json.dumps({'error': '同学还没有注册吧，先注册哦'})
+            return render(request, '../freshman_templates/login.html', {'error': json_data})
 
 
 def student_search(request):
     newstudent_id = request.COOKIES.get('newstudent_id', '')
-    if newstudent_id == '':
+    if newstudent_id == '' or not newstudent_id:
         return 'no_student_id'
     else:
         return newstudent_id
@@ -162,9 +173,9 @@ class PersonalView(View):
         if newstudent_id == 'no_student_id':
             return redirect('/login/')
         else:
-            student = Freshman.objects.get(newstudent_id=newstudent_id)  # 根据cookie中的
-            # newstudent_id在数据库中取出该学生传给前端
-            return render(request, '../freshman_templates/alterinfo.html', {'student': student})
+            student = Freshman.objects.get(newstudent_id=newstudent_id)  # 根据cookie中的newstudent_id在数据库中取出该学生传给前端
+            colleges = Academy.objects.all()
+            return render(request, '../freshman_templates/alterinfo.html', {'student': student, 'colleges': colleges})
 
     def post(self, request):
         newstudent_id = request.COOKIES.get('newstudent_id', '')
@@ -209,7 +220,11 @@ class PersonalView(View):
             else:
                 return HttpResponse("202")
         else:
-            return render(request, '../freshman_templates/alterinfo.html', )  # 提示错误信息
+            errors = []
+            for error in modify_form.errors:
+                errors.append(error)
+            error_list = ','.join(errors)
+            return HttpResponse(error_list)  # 提示错误信息
 
 
 # 选择、修改预约时间和方向（报名）界面
