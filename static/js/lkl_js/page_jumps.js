@@ -28,25 +28,6 @@ var secondpagehtml = "<form action=\"\">\n" +
         "        </form>";
 //第三页
 var thirdpagehtml = '<form action="">\n' +
-        // '            <div class="selected">\n' +
-        // '                <!--<label class="tip">请选择学院</label>-->\n' +
-        // '                <label>\n' +
-        // '                    <select name="college" class="select_list" id="college">\n' +
-        // '                        <option value="----" selected="selected" class="tip" disabled>请选择学院</option>\n' +
-        // '                        {% for college in colleges %}\n' +
-        // '                            <option value="{{ college }}">{{ college }}</option>\n' +
-        // '                        {% endfor %}' +
-        // '                    </select>\n' +
-        // '                </label>\n' +
-        // '            </div>\n' +
-        // '            <div class="selected">\n' +
-        // '                <!--<label class="tip">请选择专业</label>-->\n' +
-        // '                <label>\n' +
-        // '                    <select name="major" class="select_list" id="major">\n' +
-        // '                        <option value="" selected="selected" class="tip" disabled>请选择专业</option>\n' +
-        // '                    </select>\n' +
-        // '                </label>\n' +
-        // '            </div>\n' +
         '            <input type="text" id="class" placeholder="请输入班级" onfocus="this.placeholder=\'\'" onblur="this.placeholder=\'请输入班级\'" name=""><br>\n' +
         '            <br>\n' +
         '            <div class="main_footer">\n' +
@@ -115,6 +96,7 @@ function SecondToThird() {
     //用于显示变化后的页面的值
     if (sessionStorage.getItem('college')){
         document.getElementById('college').value = sessionStorage.getItem('college');
+        get_major();
     }
     if (sessionStorage.getItem('major')){
         setTimeout("document.getElementById('major').value = sessionStorage.getItem('major');", 100);
@@ -149,7 +131,11 @@ function ThirdToForth() {
     document.getElementById('college_list').hidden = true;
     document.getElementById('major_list').hidden = true;
     document.getElementById('apartment_list').hidden = false;
+    document.getElementById('city_list').hidden = false;
     //用于显示变化后的页面的值
+    if (sessionStorage.getItem('city')){
+        document.getElementById('city').value = sessionStorage.getItem('city');
+    }
     if (sessionStorage.getItem('apartment')) {
         document.getElementById('apartment').value = sessionStorage.getItem('apartment');
     }
@@ -157,8 +143,10 @@ function ThirdToForth() {
 }
 function ForthToThird() {
     //保存当前页面数据
+    var city = document.getElementById('city').value;
     var apartment = document.getElementById('apartment').value;
     var dormitory = document.getElementById('dormitory').value;
+    sessionStorage.setItem('city', city);
     sessionStorage.setItem("apartment", apartment);
     sessionStorage.setItem("dormitory", dormitory);
     //显示上/下一页面
@@ -166,6 +154,7 @@ function ForthToThird() {
     document.getElementById('college_list').hidden = false;
     document.getElementById('major_list').hidden = false;
     document.getElementById('apartment_list').hidden = true;
+    document.getElementById('city_list').hidden = true;
     get_major();
     //用于显示变化后的页面的值
     if (sessionStorage.getItem('college')){
@@ -192,8 +181,10 @@ function ForthToThird() {
     document.getElementById('class').value = sessionStorage.getItem('class');
 }
 function Form_Submit() {
+    var city = document.getElementById('city').value;
     var apartment = document.getElementById('apartment').value;
     var dormitory = document.getElementById('dormitory').value;
+    sessionStorage.setItem("city", city);
     sessionStorage.setItem("apartment", apartment);
     sessionStorage.setItem("dormitory", dormitory);
     var csrf_token = getCookie('csrftoken');
@@ -210,6 +201,7 @@ function Form_Submit() {
         'phone' : sessionStorage.getItem('phone'),
         'qq' : sessionStorage.getItem('QQ'),
         'email' : sessionStorage.getItem('email'),
+        'city' : sessionStorage.getItem('city'),
         'apartment' : sessionStorage.getItem('apartment'),
         'dormitory' : sessionStorage.getItem('dormitory'),
         'csrfmiddlewaretoken' : csrf_token},
@@ -227,7 +219,7 @@ function Form_Submit() {
             swal({
                 title : "注册失败啦",
                 //暂待修改
-                text: result,
+                text: '是不是学号已经注册过啦\n看看自己前面是不是有空忘记填',
                 type : "error",
                 confirmButtonText : "确定",
                 closeOnConfirm : false
@@ -262,7 +254,6 @@ function get_major() {
                 'csrfmiddlewaretoken': getCookie('csrftoken')},
         success: function (result) {
             if (result !== ''){
-                console.log(result);
                 var major_list = result.split(',');
                 for (var i = 0; i < major_list.length; i++){
                     var item = document.createElement("option");
